@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     echo "Installing BeakerX" 1>&2 \
     && conda install -y -c conda-forge ipywidgets beakerx \
-    && jupyter nbextension enable beakerx --py --sys-prefix \
+    && jupyter nbextension enable beakerx --py --sys-prefix 2>&1 \
     && echo "Installed: BeakerX" 1>&2
 # BeakerX will install JDK 8
 ARG JDK_VERSION=8
@@ -101,9 +101,9 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
 #    && echo "Installed: Octave" 1>&2
 # Can't install jupyterlab-sos because it downgrades nodejs, breaking the jupyterlab build.
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
-    echo "Installing SoS Workflows" \
+    echo "Installing SoS Workflows" 1>&2 \
     && conda install -y -c conda-forge sos sos-pbs sos-notebook sos-papermill sos-bash sos-matlab sos-python sos-r \
-    && echo "Installed: SoS Workflows"
+    && echo "Installed: SoS Workflows" 1>&2
 RUN echo "Adding jupyter user and group" \
     && groupadd -r jupyter \
     && useradd --no-log-init -r -g jupyter jupyter
