@@ -193,5 +193,6 @@ LABEL Name=jupyterserver Version=0.0.1
 ENV JUPYTER_PORT=8888
 USER jupyter:jupyter
 WORKDIR /home/jupyter
-ENTRYPOINT [ "/opt/conda/bin/jupyter", "lab", "--port=8888", "--notebook-dir=/home/jupyter", "--ip=0.0.0.0" ]
+CMD [ "lab", "--port=8888", "--notebook-dir=/home/jupyter", "--ip=0.0.0.0" ]
+ENTRYPOINT [ "/opt/conda/bin/jupyter" ]
 EXPOSE 8888
