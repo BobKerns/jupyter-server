@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  jupyterserver:
+    image: jupyterserver
+    build:
+      context: .
+      dockerfile: ./Dockerfile

@@ -1,0 +1,4 @@
+{
+    "docker.commands.build": "/usr/local/bin/docker build --pull --rm -f \"Dockerfile\" -t jupyterserver:latest .",
+    "docker.commands.runInteractive": null
+}
