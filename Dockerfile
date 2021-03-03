@@ -1,6 +1,6 @@
 # syntax = docker/dockerfile:1.2
-FROM continuumio/miniconda3:latest
-LABEL Name=jupyterserver Version=0.0.1
+
+FROM continuumio/miniconda3:latest as methane
 SHELL ["/bin/bash", "-c"]
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
@@ -112,6 +112,8 @@ RUN 1>&2 echo "Building Jupyter web application with Nodejs $(node --version)" \
     && (jupyter lab build --minimize=False --dev-build=False || (cat /tmp/*.log 1>&2; exit 1))\
     && 1>&2 echo "Jupyter build Complete, creating final image"
 
+FROM methane
+LABEL Name=jupyterserver Version=0.0.1
 ENV JUPYTER_PORT=8888
 USER jupyter:jupyter
 WORKDIR /home/jupyter
