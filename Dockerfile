@@ -10,13 +10,16 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && apt-get install -y gcc g++ make libunwind8 curl libcurl4-openssl-dev libssl-dev \
     && conda upgrade --all \
     && conda update -n base -c defaults conda -y \
+    && conda clean -t -y \
+    && conda clean -p -y \
     && 1>&2 echo "Installed: $(conda --version)"
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing Base Jupyter" \
     && conda install -y jupyterlab ipykernel ipyparallel ipywidgets ipympl notebook \
     && conda install -y -c conda-forge ipyvolume bqplot calysto_bash allthekernels \
     && pip3 install calysto_scheme \
-    && python3 -m calysto_scheme install 2>&1\
+    && conda clean -t -y \
+    && conda clean -p -y \
     && 1>&2 echo "Installed: Base Jupyter"
 ARG NODE_VERSION=15
 ENV NODE_VERSION=${NODE_VERSION}
@@ -35,15 +38,18 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && conda install -y zeromq \
     && npm install -g ijavascript \
     && ijsinstall \
+    && conda clean -p -y \
     && 1>&2 echo "Installed: node-based kernels (Typescript and Javascript)"
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing R" \
     && conda install -y r-base r-repr r-irkernel r-irdisplay \
+    && conda clean -p -y \
     && 1>&2 echo "Installed: R"
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing BeakerX" \
     && conda install -y -c conda-forge ipywidgets beakerx \
     && jupyter nbextension enable beakerx --py --sys-prefix 2>&1 \
+    && conda clean -p -y \
     && 1>&2 echo "Installed: BeakerX"
 # BeakerX will install JDK 8
 ARG JDK_VERSION=8
@@ -79,6 +85,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         && chmod +x coursier \
         &&  (./coursier launch --fork almond:0.11.0 --scala 2.13 -- --install --global 2>&1 | egrep -v '^Download') \
         && rm -f coursier \
+        && conda clean -p -y \
         && 1>&2 echo "Installed Almond Scala kernel" ; \
     else \
         1>&2 echo "Almond Skipped" ; \
@@ -91,6 +98,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         1>&2 echo "Installing scilab" \
         && conda install -y -c conda-forge scilab \
         && pip3 install scilab_kernel \
+        && conda clean -p -y \
         && 1>&2 echo "Installed: Scilab" ; \
     else \
         1>&2 echo "Scilab Skipped" ; \
@@ -103,6 +111,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing SoS Workflows" \
     && conda install -y -c conda-forge sos sos-pbs sos-notebook sos-papermill sos-bash sos-matlab sos-python sos-r \
+    && conda clean -p -y \
     && 1>&2 echo "Installed: SoS Workflows"
 RUN 1>&2 echo "Adding jupyter user and group" \
     && groupadd -r jupyter \
