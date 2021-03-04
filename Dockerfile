@@ -1,29 +1,70 @@
 # syntax = docker/dockerfile:1.2
 
-FROM continuumio/miniconda3:latest as methane
+## Dockerfile for building a unified jupyterlab server.
+## Be sure to allocate a sufficient amount of memory to docker, as the minify step in building
+## jupyterlab extensions is a real memory hog.
 
+FROM debian:latest as methane
+# Conda version and SHA254 from https://conda.io/en/latest/miniconda_hashes.html
+# Python version is constrained to 3.7 by BeakerX, and to <3.9 by several packages
+ARG PYTHON_VERSION=3.7
+# Be sure to set CONDA_SH256 to the hash corresponding to the CONDA_VERSION and PYTHON_VERSION
+ARG CONDA_VERSION=4.9.2
+ARG CONDA_SH256=79510c6e7bd9e012856e25dcb21b3e093aa4ac8113d9aa7e82a86987eabe1c31
+# Make the arguments available as environment variables.
+ENV CONDA_VERSION=${CONDA_VERSION}
+ENV PYTHON_VERSION=${PYTHON_VERSION}
 # Default shell (dash) doesn't support set -o pipefail.
 SHELL ["/bin/bash", "-c"]
+
+# Don't build in root
+WORKDIR /home/jupyter
+
+# Configure
+RUN 1>&2 echo "Adding jupyter user and group" \
+    && groupadd -r jupyter \
+    && useradd --no-log-init -r -g jupyter jupyter \
+    && mkdir user \
+    && mkdir examples \
+    && chown -R jupyter:jupyter .
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
-    1>&2 echo "Updating conda" \
-    && apt-get update -y \
-    && apt-get upgrade -y \
+    1>&2 echo "Installing base dependencies" \
+    && apt-get update \
     && apt-get install -y \
         gcc \
         g++ \
         make \
         libunwind8 \
         curl \
+        wget \
         libcurl4-openssl-dev \
         libssl-dev \
-    && conda upgrade --all \
-    && conda update -n base -c defaults conda -y \
-    && conda clean -t -y \
-    && conda clean -p -y \
-    && 1>&2 echo "Installed: $(conda --version)"
+    && 1>&2 echo "Installed: base dependencies"
+
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    1>&2 echo "Installing conda ${CONDA_VERSION}" \
+    && wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py${PYTHON_VERSION/./}_${CONDA_VERSION}-Linux-x86_64.sh -O miniconda.sh \
+    && echo "${CONDA_SH256}  miniconda.sh" > miniconda.sha256 \
+    && if ! sha256sum --status -c miniconda.sha256; then \
+        1>&2 echo "conda checksums did not match." ; \
+        exit 1; \
+    fi \
+    && mkdir -p /opt \
+    && sh miniconda.sh -b -p /opt/conda \
+    && rm miniconda.sh miniconda.sha256 \
+    && ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh \
+    && echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc \
+    && echo "conda activate base" >> ~/.bashrc \
+    && find /opt/conda/ -follow -type f -name '*.a' -delete \
+    && find /opt/conda/ -follow -type f -name '*.js.map' -delete \
+    && /opt/conda/bin/conda clean -afy \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
+    && 1>&2 echo "Installed: $(/opt/conda/bin/conda --version)"
+
+ENV PATH=/opt/conda/bin:$PATH
 
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing Base Jupyter" \
@@ -44,6 +85,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && python3 -m calysto_scheme install 2>&1 \
     && conda clean -t -y \
     && conda clean -p -y \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Installed: Base Jupyter"
 
 ARG NODE_VERSION=15
@@ -70,10 +112,13 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && ijsinstall \
     && conda clean -t -y \
     && conda clean -p -y \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Installed: node-based kernels (Typescript and Javascript)"
 
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing R" \
+    && apt-get install -y \
+        libcairo2-dev \
     && conda install -y \
         r-base \
         r-repr \
@@ -81,16 +126,23 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         r-irdisplay \
     && conda clean -t -y \
     && conda clean -p -y \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Installed: R"
 
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     1>&2 echo "Installing BeakerX" \
     && conda install -y -c conda-forge \
         ipywidgets \
-        beakerx \
-    && jupyter nbextension enable beakerx --py --sys-prefix 2>&1 \
+    && npm install \
+        @types/three \
+        typescript \
+    && (conda install -y -c beakerx \
+        beakerx_all || ( \
+            1>&1 cat /tmp/*.log \
+            exit 1)) \
     && conda clean -t -y \
     && conda clean -p -y \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Installed: BeakerX"
 
 # BeakerX will install JDK 8
@@ -136,6 +188,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         && rm -f coursier \
         && conda clean -t -y \
         && conda clean -p -y \
+        && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
         && 1>&2 echo "Installed Almond Scala kernel" ; \
     else \
         1>&2 echo "Almond Skipped" ; \
@@ -153,6 +206,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
             scilab_kernel \
         && conda clean -t -y \
         && conda clean -p -y \
+        && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
         && 1>&2 echo "Installed: Scilab" ; \
     else \
         1>&2 echo "Scilab Skipped" ; \
@@ -176,23 +230,47 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         sos-r \
     && conda clean -t -y \
     && conda clean -p -y \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Installed: SoS Workflows"
 
-# Configure
-RUN 1>&2 echo "Adding jupyter user and group" \
-    && groupadd -r jupyter \
-    && useradd --no-log-init -r -g jupyter jupyter
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    1>&2 echo "Installing Renderers and extensions" \
+    && conda install -c conda-forge -y \
+        ipyleaflet \
+        pythreejs \
+        ipydatawidgets \
+    && pip install \
+        ipyturtle2 \
+        jupyterlab_hdf \
+    && jupyter labextension install --no-build @krassowski/jupyterlab_go_to_definition \
+    && jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager \
+    && jupyter labextension install --no-build jupyterlab-datawidgets \
+    && jupyter labextension install --no-build jupyter-leaflet \
+    && jupyter labextension install --no-build @jupyterlab/geojson-extension \
+    && jupyter labextension install --no-build @jupyterlab/fasta-extension \
+    && jupyter labextension install --no-build @jupyterlab/github \
+    && jupyter labextension install --no-build @jupyterlab/hdf5 \
+    && jupyter labextension install --no-build jupyterlab-spreadsheet \
+    && jupyter labextension install --no-build ipyturtle2 \
+    && conda clean -t -y \
+    && conda clean -p -y \
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
+    && 1>&2 echo "Installed: Renderers and extensions"
 
-RUN 1>&2 echo "Building Jupyter web application with Nodejs $(node --version)" \
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    1>&2 echo "Building Jupyter web application with Nodejs $(node --version)" \
     && jupyter kernelspec list \
+    && jupyter labextension list \
     && (jupyter lab build --minimize=False --dev-build=False || (cat /tmp/*.log 1>&2; exit 1))\
+    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Jupyter build Complete, creating final image"
 
+
 FROM methane
-LABEL Name=jupyterserver Version=0.0.1
+LABEL Name=jupyterlab-server Version=0.0.1
 ENV JUPYTER_PORT=8888
+COPY examples examples
 USER jupyter:jupyter
-WORKDIR /home/jupyter
 CMD [ "lab", "--port=8888", "--notebook-dir=/home/jupyter", "--ip=0.0.0.0" ]
 ENTRYPOINT [ "/opt/conda/bin/jupyter" ]
 EXPOSE 8888
