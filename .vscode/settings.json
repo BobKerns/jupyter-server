@@ -1,4 +1,4 @@
 {
-    "docker.commands.build": "/usr/local/bin/docker build --pull --rm -f \"Dockerfile\" -t jupyterserver:latest .",
-    "docker.commands.runInteractive": null
+    "docker.commands.build": "docker build --pull --rm -f \"Dockerfile\" -t jupyterserver:latest .",
+    "docker.commands.runInteractive": "docker run -ait -rm --name jupyter --mount type=bind,source=/Users/rwk/jtest,target=/home/jupyter/user -p 8888:8888 -p 9999:9999 jupyterserver"
 }
