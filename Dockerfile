@@ -24,9 +24,11 @@ WORKDIR /home/jupyter
 RUN 1>&2 echo "Adding jupyter user and group" \
     && groupadd -r jupyter \
     && useradd --no-log-init -r -g jupyter jupyter \
-    && mkdir user \
-    && mkdir examples \
-    && chown -R jupyter:jupyter .
+    && mkdir /jupyter \
+    && mkdir /jupyter/user \
+    && mkdir /jupyter/examples \
+    && chown -R jupyter:jupyter . \
+    && chown -R jupyter:jupyter /jupyter
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
@@ -269,8 +271,9 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
 FROM methane
 LABEL Name=jupyterlab-server Version=0.0.1
 ENV JUPYTER_PORT=8888
+WORKDIR /jupyter
 COPY examples examples
 USER jupyter:jupyter
-CMD [ "lab", "--port=8888", "--notebook-dir=/home/jupyter", "--ip=0.0.0.0" ]
+CMD [ "lab", "--port=8888", "--notebook-dir=/jupyter", "--ip=0.0.0.0" ]
 ENTRYPOINT [ "/opt/conda/bin/jupyter" ]
 EXPOSE 8888
