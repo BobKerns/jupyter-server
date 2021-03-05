@@ -28,7 +28,7 @@ RUN 1>&2 echo "Adding jupyter user and group" \
     && mkdir /jupyter/user \
     && mkdir /jupyter/examples \
     && chown -R jupyter:jupyter . \
-    && chown -R jupyter:jupyter /jupyter
+    && chmod a-w /jupyter
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
