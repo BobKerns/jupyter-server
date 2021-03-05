@@ -26,8 +26,9 @@ RUN 1>&2 echo "Adding jupyter user and group" \
     && useradd --no-log-init -r -g jupyter jupyter \
     && mkdir /jupyter \
     && mkdir /jupyter/user \
-    && mkdir /jupyter/examples \
+    && mkdir /jupyter/content \
     && chown -R jupyter:jupyter . \
+    && chown -R jupyter:jupyter /jupyter \
     && chmod a-w /jupyter
 
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
@@ -44,6 +45,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         wget \
         libcurl4-openssl-dev \
         libssl-dev \
+        rsync \
     && 1>&2 echo "Installed: base dependencies"
 
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
@@ -272,8 +274,8 @@ FROM methane
 LABEL Name=jupyterlab-server Version=0.0.1
 ENV JUPYTER_PORT=8888
 WORKDIR /jupyter
-COPY examples examples
+COPY content content
 USER jupyter:jupyter
-CMD [ "lab", "--port=8888", "--notebook-dir=/jupyter", "--ip=0.0.0.0" ]
-ENTRYPOINT [ "/opt/conda/bin/jupyter" ]
+CMD [ "lab", "--port=8888", "--notebook-dir=/jupyter/user", "--ip=0.0.0.0" ]
+ENTRYPOINT [ "/bin/bash", "-c", "rsync content/examples user/examples; rsync -u content/README.md README.md; /opt/conda/bin/jupyter \"$@\"", "--" ]
 EXPOSE 8888
