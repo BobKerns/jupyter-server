@@ -278,6 +278,8 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && jupyter notebook --generate-config \
     && 1>&2 echo "Jupyter build Complete, creating final image"
 
+WORKDIR /home/jupyter
+COPY jupyter_server_config.json .jupyter/jupyter_server_config.json
 
 FROM methane
 LABEL Name=jupyterlab-server Version=0.0.1
