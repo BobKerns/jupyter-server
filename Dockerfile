@@ -260,6 +260,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && jupyter labextension install --no-build jupyter-leaflet \
     && jupyter labextension install --no-build @jupyterlab/geojson-extension \
     && jupyter labextension install --no-build @jupyterlab/fasta-extension \
+    # && jupyter labextension install --no-build @jupyterlab/github \
     # && jupyter labextension install --no-build @jupyterlab/hdf5 \
     && jupyter labextension install --no-build jupyterlab-spreadsheet \
     && jupyter labextension install --no-build ipyturtle2 \
