@@ -1,4 +1,4 @@
 {
     "docker.commands.build": "docker build --pull --rm -f \"Dockerfile\" -t jupyterserver:latest .",
-    "docker.commands.runInteractive": "docker run -it --rm --name jupyter --mount type=bind,source=/Users/rwk/p/jupyter-server/content/examples,target=/jupyter/user -p 8888:8888 -p 9999:9999 jupyterserver"
+    "docker.commands.runInteractive": "docker run -it --rm --name jupyter --group-add 'jupyter' --env NODEPLOY=YES --mount type=bind,source=/Users/rwk/p/jupyter-server/content/examples,target=/jupyter/user -p 8888:8888 -p 9999:9999 jupyterserver"
 }
