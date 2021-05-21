@@ -253,15 +253,14 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
         ipydatawidgets \
     && pip install \
         ipyturtle2 \
-        jupyterlab_hdf \
+    #    jupyterlab_hdf \
     && jupyter labextension install --no-build @krassowski/jupyterlab_go_to_definition \
     && jupyter labextension install --no-build @jupyter-widgets/jupyterlab-manager \
     && jupyter labextension install --no-build jupyterlab-datawidgets \
     && jupyter labextension install --no-build jupyter-leaflet \
     && jupyter labextension install --no-build @jupyterlab/geojson-extension \
     && jupyter labextension install --no-build @jupyterlab/fasta-extension \
-    && jupyter labextension install --no-build @jupyterlab/github \
-    && jupyter labextension install --no-build @jupyterlab/hdf5 \
+    # && jupyter labextension install --no-build @jupyterlab/hdf5 \
     && jupyter labextension install --no-build jupyterlab-spreadsheet \
     && jupyter labextension install --no-build ipyturtle2 \
     && conda clean -t -y \
