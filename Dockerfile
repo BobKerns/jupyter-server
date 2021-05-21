@@ -275,6 +275,7 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && jupyter labextension list \
     && (jupyter lab build --minimize=False --dev-build=False || (cat /tmp/*.log 1>&2; exit 1))\
     && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
+    && jupyter notebook --generate-config \
     && 1>&2 echo "Jupyter build Complete, creating final image"
 
 
