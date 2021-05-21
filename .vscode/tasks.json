@@ -7,6 +7,31 @@
             "label": "Docker Build",
             "type": "shell",
             "command": "docker build"
+        },
+        {
+            "label": "Run Jupyter",
+            "type": "docker-run",
+            "dockerRun": {
+                "image": "jupyterserver",
+                "volumes": [
+                    {
+                        "localPath": "/Users/rwk/Documents/Jupyter",
+                        "containerPath": "/jupyter/user",
+                        "permissions": "rw"
+                    }
+                ],
+                "ports": [
+                    {
+                        "hostPort": 8888,
+                        "containerPort": 8888
+                    }
+                ]
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         }
     ]
 }
