@@ -25,7 +25,8 @@
                         "hostPort": 8888,
                         "containerPort": 8888
                     }
-                ]
+                ],
+                "customOptions": "--group-add 'jupyter'"
             },
             "problemMatcher": [],
             "group": {
