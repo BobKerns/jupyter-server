@@ -299,6 +299,6 @@ USER jupyter:jupyter
 CMD [ "lab", "--port=8888", "--notebook-dir=/jupyter/user", "--ip=0.0.0.0" ]
 ENTRYPOINT [ "/bin/bash", "-c", \
     "(test -z \"${NODEPLOY}\"  && \
-    (rsync -r --exclude=content/examples/examples --exclude='.Trash-*' content/examples/ /jupyter/user/examples/; rsync -u content/README.md /jupyter/user/README.md));\
+    (rsync -r --exclude=content/examples/examples --exclude='.Trash-*' content/examples/ /jupyter/user/examples/; rsync -u content/README.ipynb /jupyter/user/README.ipynb));\
     /opt/conda/bin/jupyter \"$@\"", "--" ]
 EXPOSE 8888
