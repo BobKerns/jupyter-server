@@ -133,21 +133,29 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
     && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
     && 1>&2 echo "Installed: R"
 
+ARG INSTALL_BEAKERX=NO
+ENV INSTALL_BEAKERX=${INSTALL_BEAKERX}
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    if [ "${INSTALL_BEAKERX}" == "YES" ]; then \
     1>&2 echo "Installing BeakerX" \
     && conda install -y -c conda-forge \
         ipywidgets \
+            bottle \
     && npm install \
         @types/three \
         typescript \
     && (conda install -y -c beakerx \
+            beakerx_tabledisplay=2.1.0 \
         beakerx_all || ( \
             1>&1 cat /tmp/*.log \
             exit 1)) \
     && conda clean -t -y \
     && conda clean -p -y \
     && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
-    && 1>&2 echo "Installed: BeakerX"
+        && 1>&2 echo "Installed: BeakerX" \
+    else \
+        echo "BeakerX not installed."; \
+    fi
 
 # BeakerX will install JDK 8
 ARG JDK_VERSION=8
@@ -155,7 +163,7 @@ ARG JDK_TYPE=hotspot-jre
 ENV JDK_VERSION=${JDK_VERSION}
 ENV JDK_TYPE=${JDK_TYPE}
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
-    if [ "${JDK_VERSION}" != 8 ]; then \
+    if [ "${JDK_VERSION}" != 8 || "${INSTALL_BEAKERX}" != "YES" ]; then \
         1>&2 echo "Installing Java" \
         && . /etc/os-release \
         && apt-get install -y \
