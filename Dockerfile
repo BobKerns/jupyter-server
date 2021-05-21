@@ -288,5 +288,8 @@ WORKDIR /jupyter
 COPY content content
 USER jupyter:jupyter
 CMD [ "lab", "--port=8888", "--notebook-dir=/jupyter/user", "--ip=0.0.0.0" ]
-ENTRYPOINT [ "/bin/bash", "-c", "rsync content/examples user/examples; rsync -u content/README.md README.md; /opt/conda/bin/jupyter \"$@\"", "--" ]
+ENTRYPOINT [ "/bin/bash", "-c", \
+    "(test -z \"${NODEPLOY}\"  && \
+    (rsync -r --exclude=content/examples/examples --exclude='.Trash-*' content/examples/ /jupyter/user/examples/; rsync -u content/README.md /jupyter/user/README.md));\
+    /opt/conda/bin/jupyter \"$@\"", "--" ]
 EXPOSE 8888
