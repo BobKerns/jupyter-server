@@ -137,21 +137,21 @@ ARG INSTALL_BEAKERX=NO
 ENV INSTALL_BEAKERX=${INSTALL_BEAKERX}
 RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
     if [ "${INSTALL_BEAKERX}" == "YES" ]; then \
-    1>&2 echo "Installing BeakerX" \
-    && conda install -y -c conda-forge \
-        ipywidgets \
+        1>&2 echo "Installing BeakerX" \
+        && conda install -y -c conda-forge \
+            ipywidgets \
             bottle \
-    && npm install \
-        @types/three \
-        typescript \
-    && (conda install -y -c beakerx \
+        && npm install \
+            @types/three \
+            typescript \
+        && (conda install -y -c beakerx \
             beakerx_tabledisplay=2.1.0 \
-        beakerx_all || ( \
-            1>&1 cat /tmp/*.log \
-            exit 1)) \
-    && conda clean -t -y \
-    && conda clean -p -y \
-    && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
+            beakerx_all || ( \
+                1>&1 cat /tmp/*.log \
+                exit 1)) \
+        && conda clean -t -y \
+        && conda clean -p -y \
+        && find /opt/conda \! -type l \! \( -perm -660 -user jupyter -group jupyter \) -exec chmod u+rw,g+rw {} + -exec chown jupyter:jupyter {} + \
         && 1>&2 echo "Installed: BeakerX" \
     else \
         echo "BeakerX not installed."; \
@@ -280,12 +280,21 @@ RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/
 
 WORKDIR /home/jupyter
 COPY jupyter_server_config.json .jupyter/jupyter_server_config.json
+WORKDIR /jupyter
+COPY content content
+
+RUN --mount=type=cache,target=/var/cache/apt --mount=type=cache,target=/var/lib/apt \
+    1>&2 echo "Set content permissions and ownership" \
+    && chown -R jupyter:jupyter /home/jupyter /jupyter \
+    && chmod a-w -R /jupyter \
+    && chmod a+w -R /home/jupyter \
+    && 1>&2 ls -al /home/jupyter \
+    && 1>&2 echo "Content installed."
 
 FROM methane
 LABEL Name=jupyterlab-server Version=0.0.1
 ENV JUPYTER_PORT=8888
 WORKDIR /jupyter
-COPY content content
 USER jupyter:jupyter
 CMD [ "lab", "--port=8888", "--notebook-dir=/jupyter/user", "--ip=0.0.0.0" ]
 ENTRYPOINT [ "/bin/bash", "-c", \
